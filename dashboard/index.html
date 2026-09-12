@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChronosGraph | Streaming Temporal Motif Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- Top Navigation & Global Telemetry Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="logo-group">
+        <div class="logo-pulse"></div>
+        <div class="logo-text">
+          <span class="brand">CHRONOS<span class="brand-highlight">GRAPH</span></span>
+          <span class="badge-tag">STREAMING TEMPORAL ENGINE</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="telemetry-bar">
+      <div class="metric-pill">
+        <span class="pill-label">STREAM VELOCITY</span>
+        <span class="pill-value" id="stat-throughput">0 tx/s</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">ACTIVE WORKING SET</span>
+        <span class="pill-value text-cyan" id="stat-working-set">0 / 250 V_max</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">MEMORY BOUND</span>
+        <span class="pill-value text-emerald" id="stat-memory">O(1) FLAT</span>
+      </div>
+      <div class="metric-pill">
+        <span class="pill-label">THEORETICAL ASSURANCE</span>
+        <span class="pill-value text-gold" id="stat-assurance">99.8% (1 - &delta;)</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <a href="https://github.com/rswarke1972-art/ChronosGraph" target="_blank" class="btn-github">
+        <svg class="icon-gh" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+        </svg>
+        <span>GitHub v1.0.0</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Main Content Dashboard Grid -->
+  <main class="dashboard-grid">
+    <!-- Left Column: Controls & Scenarios -->
+    <aside class="panel-left glass-card">
+      <div class="panel-section">
+        <h3 class="section-title">TOPOLOGY SCENARIO</h3>
+        <div class="scenario-buttons">
+          <button class="btn-scenario active" data-scenario="smurfing">
+            <span class="scenario-name">Smurfing / Structuring</span>
+            <span class="scenario-meta">k=4 Layering · &Delta;T=60s</span>
+          </button>
+          <button class="btn-scenario" data-scenario="arbitrage">
+            <span class="scenario-name">DEX Triangular Arbitrage</span>
+            <span class="scenario-meta">k=3 Flash Swaps · &Delta;T=15s</span>
+          </button>
+          <button class="btn-scenario" data-scenario="wash">
+            <span class="scenario-name">NFT / Token Wash Trading</span>
+            <span class="scenario-meta">k=3 Reciprocal · &Delta;T=30s</span>
+          </button>
+          <button class="btn-scenario" data-scenario="burst">
+            <span class="scenario-name">Visa / SWIFT Burst Noise</span>
+            <span class="scenario-meta">50,000 tx/s Stress Test</span>
+          </button>
+          <button class="btn-scenario" data-scenario="adversarial">
+            <span class="scenario-name">Adversarial Mixer Hub</span>
+            <span class="scenario-meta">Camouflage + Tumbler Decoys</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="section-title">STREAM PARAMETERS</h3>
+        <div class="control-group">
+          <div class="control-label-row">
+            <span>Color Sketches (L)</span>
+            <span class="control-val" id="val-trials">24</span>
+          </div>
+          <input type="range" id="slider-trials" min="4" max="48" step="4" value="24" class="slider" />
+          <div class="sub-caption">Miss Bound &delta; &le; (1 - k!/k^k)^L = 0.23%</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label-row">
+            <span>Working Set (V_max)</span>
+            <span class="control-val" id="val-vmax">250</span>
+          </div>
+          <input type="range" id="slider-vmax" min="50" max="1000" step="50" value="250" class="slider" />
+          <div class="sub-caption">Strict LRU Active Working Set Bound</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label-row">
+            <span>Window (&Delta;T seconds)</span>
+            <span class="control-val" id="val-deltat">45s</span>
+          </div>
+          <input type="range" id="slider-deltat" min="10" max="120" step="5" value="45" class="slider" />
+          <div class="sub-caption">Sliding Temporal Expiry Bound</div>
+        </div>
+
+        <div class="control-group">
+          <div class="control-label-row">
+            <span>Injection Velocity</span>
+            <span class="control-val" id="val-rate">Normal</span>
+          </div>
+          <input type="range" id="slider-rate" min="1" max="10" step="1" value="4" class="slider" />
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="section-title">MANUAL INJECTION</h3>
+        <div class="action-buttons">
+          <button id="btn-inject-cycle" class="btn-action primary">
+            <span>⚡ Inject Temporal Cycle</span>
+          </button>
+          <button id="btn-toggle-play" class="btn-action">
+            <span id="txt-play">⏸ Pause Stream</span>
+          </button>
+          <button id="btn-reset" class="btn-action danger">
+            <span>↺ Reset Engine</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Visual Graph Canvas -->
+    <section class="panel-center">
+      <div class="canvas-container">
+        <canvas id="graph-canvas"></canvas>
+        <div class="canvas-overlay-hud">
+          <div class="hud-box">
+            <div class="hud-item">
+              <span class="hud-title">CERTIFIED MOTIFS</span>
+              <span class="hud-number text-gold" id="hud-cycle-count">0</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-title">INGESTED TX</span>
+              <span class="hud-number" id="hud-edge-count">0</span>
+            </div>
+            <div class="hud-item">
+              <span class="hud-title">AVG UPDATE LATENCY</span>
+              <span class="hud-number text-emerald" id="hud-latency">0.042 ms</span>
+            </div>
+          </div>
+        </div>
+        <div class="canvas-legend">
+          <div class="legend-item"><span class="dot dot-cyan"></span> Regular Stream</div>
+          <div class="legend-item"><span class="dot dot-amber"></span> In-Progress Motif Path</div>
+          <div class="legend-item"><span class="dot dot-gold"></span> Certified Temporal Cycle</div>
+          <div class="legend-item"><span class="dot dot-crimson"></span> Tumbler / Mixing Hub</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Forensic Feed & Pareto Frontier -->
+    <aside class="panel-right glass-card">
+      <div class="panel-section flex-1">
+        <div class="feed-header">
+          <h3 class="section-title">LIVE FORENSIC AUDIT TRAIL</h3>
+          <span class="live-dot-pulse"></span>
+        </div>
+        <div class="feed-list" id="audit-feed">
+          <!-- Real-time certified cycle cards injected here -->
+        </div>
+      </div>
+
+      <div class="panel-section border-t">
+        <h3 class="section-title">PARETO FRONTIER TELEMETRY</h3>
+        <div class="pareto-chart-card">
+          <canvas id="pareto-mini-canvas" height="140"></canvas>
+          <div class="pareto-caption">
+            <span>Memory Budget vs. Detection Recall (F1 = 0.988 @ L=24, V=250)</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

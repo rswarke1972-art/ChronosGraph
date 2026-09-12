@@ -1,0 +1,187 @@
+{
+  "Smurfing / Structuring Rings (k=4 AML)": {
+    "ChronosGraph (Fast, L=16)": {
+      "recall": 0.68,
+      "precision": 0.7083,
+      "f1": 0.6939,
+      "throughput_tx_s": 8219.1,
+      "elapsed_sec": 0.3148
+    },
+    "ChronosGraph (Assurance, L=32)": {
+      "recall": 0.88,
+      "precision": 0.7586,
+      "f1": 0.8148,
+      "throughput_tx_s": 3768.2,
+      "elapsed_sec": 0.6865
+    },
+    "Exact Temporal DFS (Ground Truth)": {
+      "recall": 1.0,
+      "precision": 0.7812,
+      "f1": 0.8772,
+      "throughput_tx_s": 223427.5,
+      "elapsed_sec": 0.0116
+    },
+    "Static Graph Cycle Detector": {
+      "recall": 1.0,
+      "precision": 0.0046,
+      "f1": 0.0092,
+      "throughput_tx_s": 6112.8,
+      "elapsed_sec": 0.4232
+    },
+    "Degree / Volume Heuristic": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "throughput_tx_s": 848419.3,
+      "elapsed_sec": 0.003
+    }
+  },
+  "Triangular DEX Arbitrage (k=3 Flash Bots)": {
+    "ChronosGraph (Fast, L=16)": {
+      "recall": 1.0,
+      "precision": 0.8333,
+      "f1": 0.9091,
+      "throughput_tx_s": 9629.5,
+      "elapsed_sec": 0.3191
+    },
+    "ChronosGraph (Assurance, L=32)": {
+      "recall": 1.0,
+      "precision": 0.8333,
+      "f1": 0.9091,
+      "throughput_tx_s": 5635.5,
+      "elapsed_sec": 0.5453
+    },
+    "Exact Temporal DFS (Ground Truth)": {
+      "recall": 1.0,
+      "precision": 0.8333,
+      "f1": 0.9091,
+      "throughput_tx_s": 325305.7,
+      "elapsed_sec": 0.0094
+    },
+    "Static Graph Cycle Detector": {
+      "recall": 1.0,
+      "precision": 0.03,
+      "f1": 0.0582,
+      "throughput_tx_s": 46406.6,
+      "elapsed_sec": 0.0662
+    },
+    "Degree / Volume Heuristic": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "throughput_tx_s": 1242369.1,
+      "elapsed_sec": 0.0025
+    }
+  },
+  "Token/NFT Wash Trading (k=3 Syndicates)": {
+    "ChronosGraph (Fast, L=16)": {
+      "recall": 1.0,
+      "precision": 0.7353,
+      "f1": 0.8475,
+      "throughput_tx_s": 10775.9,
+      "elapsed_sec": 0.2375
+    },
+    "ChronosGraph (Assurance, L=32)": {
+      "recall": 1.0,
+      "precision": 0.7353,
+      "f1": 0.8475,
+      "throughput_tx_s": 4979.6,
+      "elapsed_sec": 0.5139
+    },
+    "Exact Temporal DFS (Ground Truth)": {
+      "recall": 1.0,
+      "precision": 0.7353,
+      "f1": 0.8475,
+      "throughput_tx_s": 179484.5,
+      "elapsed_sec": 0.0143
+    },
+    "Static Graph Cycle Detector": {
+      "recall": 1.0,
+      "precision": 0.0436,
+      "f1": 0.0836,
+      "throughput_tx_s": 66128.0,
+      "elapsed_sec": 0.0387
+    },
+    "Degree / Volume Heuristic": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "throughput_tx_s": 999063.0,
+      "elapsed_sec": 0.0026
+    }
+  },
+  "Visa/SWIFT Burst Volume Stress Stream": {
+    "ChronosGraph (Fast, L=16)": {
+      "recall": 0.95,
+      "precision": 0.152,
+      "f1": 0.2621,
+      "throughput_tx_s": 8673.8,
+      "elapsed_sec": 1.7331
+    },
+    "ChronosGraph (Assurance, L=32)": {
+      "recall": 1.0,
+      "precision": 0.1404,
+      "f1": 0.2462,
+      "throughput_tx_s": 3792.5,
+      "elapsed_sec": 3.9639
+    },
+    "Exact Temporal DFS (Ground Truth)": {
+      "recall": 1.0,
+      "precision": 0.1208,
+      "f1": 0.2156,
+      "throughput_tx_s": 136127.0,
+      "elapsed_sec": 0.1104
+    },
+    "Static Graph Cycle Detector": {
+      "recall": 1.0,
+      "precision": 0.0005,
+      "f1": 0.001,
+      "throughput_tx_s": 1996.3,
+      "elapsed_sec": 7.5305
+    },
+    "Degree / Volume Heuristic": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "throughput_tx_s": 1220656.9,
+      "elapsed_sec": 0.0123
+    }
+  },
+  "Adversarial Camouflage & Tumbler Hubs": {
+    "ChronosGraph (Fast, L=16)": {
+      "recall": 1.0,
+      "precision": 0.7143,
+      "f1": 0.8333,
+      "throughput_tx_s": 8856.8,
+      "elapsed_sec": 0.3436
+    },
+    "ChronosGraph (Assurance, L=32)": {
+      "recall": 1.0,
+      "precision": 0.7143,
+      "f1": 0.8333,
+      "throughput_tx_s": 3990.0,
+      "elapsed_sec": 0.7627
+    },
+    "Exact Temporal DFS (Ground Truth)": {
+      "recall": 1.0,
+      "precision": 0.7143,
+      "f1": 0.8333,
+      "throughput_tx_s": 142604.8,
+      "elapsed_sec": 0.0213
+    },
+    "Static Graph Cycle Detector": {
+      "recall": 1.0,
+      "precision": 0.0347,
+      "f1": 0.0671,
+      "throughput_tx_s": 53754.9,
+      "elapsed_sec": 0.0566
+    },
+    "Degree / Volume Heuristic": {
+      "recall": 0.0,
+      "precision": 1.0,
+      "f1": 0.0,
+      "throughput_tx_s": 566550.6,
+      "elapsed_sec": 0.0054
+    }
+  }
+}
