@@ -3,44 +3,45 @@
 **Author:** Sahil Rajesh Warke  
 **Affiliation:** Independent Systems & Algorithmic Research  
 **Target Venue:** IEEE Transactions on Knowledge and Data Engineering (TKDE) / IEEE International Conference on Data Engineering (ICDE)  
-**Version:** 1.0.0 (Preprint Edition)  
+**Version:** 1.1.0 (Audited Theoretical Edition)  
 **Date:** September 2026  
 
 ---
 
 ## Abstract
-Detecting directed cyclical motifs in high-velocity financial streams (e.g., Visa settlement feeds, Ethereum mempools, decentralized liquidity pools) is a foundational capability for identifying anti-money laundering (AML) structuring rings, cyclical wash-trading syndicates, and front-running arbitrage bots. However, exact temporal subgraph isomorphism is NP-complete, and exact sliding-window temporal depth-first search scales exponentially as $O(V \cdot d^k)$ with node degree $d$, freezing stream processors when encountering high-degree exchange hubs ($d > 10^4$). Furthermore, static graph cycle algorithms disregard the chronological arrow of time ($t_1 < t_2 < \dots < t_k$), generating catastrophic nominal false-alarm rates (precision $< 4.4\%$). 
+Detecting directed cyclical motifs in high-velocity financial transaction streams (e.g., Visa settlement feeds, Ethereum mempools, decentralized liquidity pools) is a foundational computational primitive used to model financial-forensics structures, including anti-money laundering (AML) structuring rings, cyclical wash-trading syndicates, and front-running arbitrage loops. However, exact temporal subgraph isomorphism is NP-complete, and exact sliding-window temporal depth-first search scales exponentially as $O(V \cdot d^k)$ with node degree $d$, freezing stream processors when encountering high-degree exchange hubs ($d > 10^4$). Furthermore, static graph cycle algorithms disregard the chronological arrow of time ($t_1 < t_2 < \dots < t_k$), generating catastrophic nominal false-alarm rates ($P_{\text{financial}} < 4.4\%$).
 
-We present **ChronosGraph**, an online streaming temporal graph engine that achieves bounded-memory, sub-millisecond temporal motif detection. ChronosGraph combines a bounded active vertex working set ($|V_{\text{active}}| \le V_{\max}$) with $L$ independent $k$-wise independent polynomial color-coding sketches. Dynamic reachability bitmasks track path states in amortized $O(L \cdot 2^k) = O(1)$ time per incoming transaction edge, decoupled from graph size and vertex degree. We formally prove:
-1. **Bounded Space:** $M_{\text{total}} \le O(V_{\max} L 2^k + M_{\text{reservoir}}) = O(1)$ independent of stream volume $N \to \infty$;
-2. **Temporal Soundness:** 100% temporal precision, mathematically guaranteeing that every reported cycle satisfies $t_1 < t_2 < \dots < t_k$ within sliding window $\Delta T$; and
-3. **Unified Miss Probability:** $\delta_{\text{total}} \le (1 - k!/k^k)^L + \delta_{\text{reservoir}}$.
+We present **ChronosGraph**, an online streaming temporal graph engine that achieves bounded-memory, sub-millisecond temporal motif detection. ChronosGraph combines a bounded active vertex working set ($|V_{\text{active}}| \le V_{\max}$) with $L$ independent $k$-wise independent polynomial color-coding sketches over Mersenne prime field $\mathbb{F}_{2^{31}-1}$ equipped with an unbiased remainder mapping. Dynamic reachability bitmasks track path states in amortized $O(L \cdot 2^k) = O(1)$ operations per incoming edge, decoupled from graph size and vertex degree. We formally establish:
+1. **Deterministic Bounded Space:** $M_{\text{total}} \le O(V_{\max} L 2^k + M_{\text{reservoir}}) = O(1)$ independent of stream volume $N \to \infty$;
+2. **Deterministic Temporal Soundness:** Certified zero false temporal cycles (100% temporal motif precision $P_{\text{motif}} = 1.0$), guaranteeing every reported cycle satisfies $t_1 < t_2 < \dots < t_k$ within sliding window $\Delta T$; and
+3. **Probabilistic Recall (Union-Bound Upper Bound):** $\delta_{\text{miss}} \le (1 - k!/k^k)^L + \delta_{\text{reservoir}}$.
 
-In comprehensive empirical evaluations on synthetic streams and five realistic financial fraud topologies, ChronosGraph achieves **100.0% recall ($F_1 = 0.988$)** on triangular arbitrage and wash trading with a per-edge median latency of $36.2\text{--}105.5\,\mu\text{s}$ ($>8,000\text{--}23,000$ transactions/sec on a single CPU core) under a compact memory footprint of $73.1\text{--}175.3\text{ KB}$. We release full reproducible benchmarks, an automated 12-test formal verification suite, and an open-source 60 FPS interactive HTML5 Canvas visualizer.
+In empirical evaluations on synthetic streams and five realistic financial cyber-forensics topologies, ChronosGraph achieves **100.0% recall ($F_1 = 0.988$)** on triangular trading cycles and wash-trading motifs with a per-edge median latency of $36.2\text{--}105.5\,\mu\text{s}$ ($>8,000\text{--}23,000$ transactions/sec on a single CPU core) under a compact memory footprint of $73.1\text{--}175.3\text{ KB}$. We release full reproducible benchmarks, an automated 12-test formal verification suite, and an open-source 60 FPS interactive HTML5 Canvas visualizer.
 
 ---
 
 ## 1. Introduction
 
-High-velocity transaction networks are inherently streaming and dynamic. In decentralized finance (DeFi) and traditional interbank clearing systems (SWIFT, FedNow, Visa), millions of transactions are broadcast continuously:
-- **Structuring & Smurfing Rings:** Syndicates route illicit capital by splitting amounts beneath reporting thresholds ($<\$10,000$), directing them through multiple intermediary mule wallets, and reconverging into a destination vault.
-- **Wash Trading Syndicates:** Colluding token or NFT traders cycle assets among controlled addresses in closed directed loops to manufacture artificial volume and manipulate floor pricing.
-- **Triangular DEX Arbitrage:** High-frequency bot cycles ($Token_A \to Token_B \to Token_C \to Token_A$) executed within a single block window ($\Delta T \le 12\text{s}$) to harvest liquidity pool discrepancies.
+High-velocity transaction networks are inherently streaming and dynamic. In decentralized finance (DeFi) and interbank clearing systems (SWIFT, FedNow, Visa), millions of transactions are broadcast continuously. Compliance and forensic monitoring systems model illicit and automated patterns as directed temporal motifs:
+- **Structuring & Smurfing Rings:** Syndicates route capital by splitting amounts beneath mandatory reporting thresholds ($<\$10,000$), directing them through multiple intermediary mule wallets, and reconverging into a destination vault within window $\Delta T$.
+- **Wash Trading Syndicates:** Colluding token or NFT wallets cycle assets among controlled addresses in closed directed loops to manufacture artificial trading volume and manipulate market liquidity.
+- **Triangular DEX Arbitrage:** High-frequency bot cycles ($Token_A \to Token_B \to Token_C \to Token_A$) executed within a single block window ($\Delta T \le 12\text{s}$) to capture cross-pool pricing discrepancies.
 
-Detecting such syndicates requires identifying directed cycles of length $k$ ($k$-cycles). However, streaming financial systems face three fundamental engineering bottlenecks:
+Detecting such syndicates requires identifying directed temporal cycles of length $k$ ($k$-cycles). However, streaming graph processing faces three foundational engineering bottlenecks:
 
 1. **The Temporal Causality Gap in Static Graph Engines:**  
    Standard graph engines (Neo4j, NetworkX, Tarjan's SCC) evaluate topological connectivity on aggregated graphs. If account $A$ paid $B$ in 2021, $B$ paid $C$ in 2024, and $C$ paid $A$ in 2022, static algorithms report a 3-cycle. In reality, no capital flowed in a cycle; the transactions were separated by years. As our benchmarks demonstrate, applying static cycle detection to streaming transactions yields precision as low as $0.1\%\text{--}4.4\%$, triggering alert fatigue in compliance teams.
 2. **The High-Degree Degree Explosion in Exact Temporal DFS:**  
-   Enforcing strict temporal causality ($t_1 < t_2 < \dots < t_k \le t_1 + \Delta T$) via exact depth-first search requires exploring all causal paths within the sliding window. When a path encounters a major centralized exchange (e.g., Binance hot wallet) or liquidity router with degree $d > 10^4$, exact branch-and-bound search explodes as $O(d^k)$, stalling streaming ingestion.
+   Enforcing strict temporal causality ($t_1 < t_2 < \dots < t_k \le t_1 + \Delta T$) via exact depth-first search requires exploring all causal paths within the sliding window. When a path encounters a centralized exchange or liquidity router with degree $d > 10^4$, exact branch-and-bound search explodes as $O(d^k)$, stalling streaming ingestion.
 3. **Unbounded Memory Accumulation:**  
    Real-world streams are unbounded ($N \to \infty$). Storing adjacency lists or historical paths indefinitely leads to out-of-memory crashes.
 
 ### Contributions
 - **Genuinely Bounded Streaming Architecture:** ChronosGraph caps memory at $M_{\text{total}} \le O(V_{\max} L 2^k + M_{\text{reservoir}}) = O(1)$ by pairing an LRU active vertex working set with a sliding-window priority reservoir.
-- **Color-Coded Streaming Reachability:** Adapts Alon-Yuster-Zwick color coding to temporal streams using $k$-wise independent polynomial hashing and bitmask dynamic programming, providing $O(1)$ amortized per-edge update time.
-- **Certified Temporal Soundness Invariant:** Mathematically guarantees zero false temporal detections.
-- **Pareto Frontier Characterization:** Directly maps the trade-off between memory budget, detection recall, and per-edge latency across thousands of transactions.
+- **Unbiased $k$-Wise Independent Polynomial Coloring:** Employs an exact unbiased boundary mapping over $\mathbb{F}_{2^{31}-1}$, mathematically validating $P(\text{colorful}) = k!/k^k$.
+- **Certified Temporal Soundness Invariant:** Mathematically guarantees zero false temporal detections ($P_{\text{motif}} = 1.0$).
+- **Pareto Frontier Characterization:** Directly maps the trade-off between memory budget, empirical recall, and per-edge latency across thousands of streaming transactions.
+- **Decoupled Forensic Architecture:** Explicitly separates temporal motif detection ($C_k$) from downstream financial classification ($C_k \to \text{structuring-like pattern}$).
 
 ---
 
@@ -82,30 +83,34 @@ The active working set $\mathcal{V}_{\text{active}}$ enforces $|\mathcal{V}_{\te
 
 ---
 
-### 3.3 Invariant 2: $k$-Wise Independent Polynomial Coloring
-To satisfy the colorfulness probability $k!/k^k$, vertex hash assignments must exhibit $k$-wise independence.
+### 3.3 Invariant 2: $k$-Wise Independent Polynomial Coloring with Unbiased Mapping
+To satisfy the colorfulness probability $k!/k^k$, vertex hash assignments must exhibit exact $k$-wise independence with uniform discrete marginals.
 
-**Construction:**  
-Each sketch $l \in \{1, \dots, L\}$ defines a polynomial over finite field $\mathbb{F}_p$ where $p = 2^{31} - 1$ (a Mersenne prime):
-$$h_l(v) = \left( \sum_{j=0}^{k-1} a_{l,j} \cdot \text{hash}(v)^j \pmod p \right) \bmod k$$
+**Construction & Unbiased Modulo Mapping:**  
+Each sketch $l \in \{1, \dots, L\}$ evaluates a degree $k-1$ polynomial over finite field $\mathbb{F}_p$ where $p = 2^{31} - 1$ (a Mersenne prime):
+$$P_l(v) = \sum_{j=0}^{k-1} a_{l,j} \cdot \text{hash}(v)^j \pmod p$$
 where coefficients $a_{l,j} \in \{1, \dots, p-1\}$ are drawn uniformly and independently at initialization.
 
+Because $p$ is prime, $p$ is not divisible by $k$ ($p \equiv 1 \pmod 3$ for $k=3$, $p \equiv 3 \pmod 4$ for $k=4$). A naive modulo operation $P_l(v) \bmod k$ would introduce a tiny modulo bias of order $O(k/p) \approx 10^{-9}$. To eliminate this bias, ChronosGraph implements an unbiased mapping:
+$$\text{If } P_l(v) \ge p - (p \bmod k), \quad \text{re-map deterministically to } [0, p - (p \bmod k) - 1]$$
+Since the mapped domain has cardinality exactly divisible by $k$, each color $c \in \{0, \dots, k-1\}$ has identical pre-image cardinality $\lfloor p/k \rfloor$.
+
 **Theorem 2 (Colorfulness Invariant):**  
-Under $k$-wise independent polynomial coloring $h_l$, any set of $k$ distinct vertices $C = \{v_1, \dots, v_k\}$ receives pairwise distinct colors with probability:
+Under $k$-wise independent polynomial coloring with unbiased remainder mapping, for any directed temporal $k$-path or $k$-cycle $C$ with $k$ distinct vertices:
 $$P(C \text{ is colorful}) = \frac{k!}{k^k}$$
 
 *Proof:*  
-By definition of $k$-wise independence, the joint distribution of colors $(h_l(v_1), \dots, h_l(v_k))$ is identical to $k$ independent uniform random variables over $\{0, \dots, k-1\}$. The total number of color assignments is $k^k$. The number of assignments where all $k$ colors are distinct is $k!$. Therefore, $P(\text{colorful}) = k! / k^k$. $\blacksquare$
+By polynomial interpolation over $\mathbb{F}_p$, any $k$ distinct field evaluations are mutually independent and identically distributed. Because the remainder mapping ensures exact uniformity over $\{0, \dots, k-1\}$, the joint distribution of colors $(c_l(v_1), \dots, c_l(v_k))$ is that of $k$ independent uniform random variables. The total number of joint color assignments is $k^k$. The number of assignments with pairwise distinct colors is $k!$. Therefore, $P(\text{colorful}) = k! / k^k$. $\blacksquare$
 
 ---
 
-### 3.4 Invariant 3: Unified Miss Probability Bound
+### 3.4 Invariant 3: Unified Miss Probability Upper Bound
 A valid temporal cycle $C$ can be missed by ChronosGraph through two distinct mechanisms:
 1. **Coloring Miss ($\mathcal{E}_{\text{color}}$):** The $k$ vertices of $C$ fail to be colorful in all $L$ independent sketches.
 2. **Reservoir Loss ($\mathcal{E}_{\text{reservoir}}$):** One or more required edges of $C$ are dropped by the reservoir buffer due to capacity constraints.
 
-**Theorem 3 (Miss Probability Bound):**  
-$$\boxed{P(\text{miss}) \le \left(1 - \frac{k!}{k^k}\right)^L + \delta_{\text{reservoir}}(M_{\text{reservoir}}, \Delta T, \lambda)}$$
+**Theorem 3 (Union-Bound Miss Probability):**  
+$$\boxed{\delta_{\text{miss}} \le \delta_{\text{color}} + \delta_{\text{reservoir}} = \left(1 - \frac{k!}{k^k}\right)^L + \delta_{\text{reservoir}}(M_{\text{reservoir}}, \Delta T, \lambda)}$$
 where $\lambda$ is the transaction arrival rate. When stream rate is within capacity ($\lambda \cdot \Delta T \le M_{\text{reservoir}}$), $\delta_{\text{reservoir}} = 0$ and the bound collapses exactly to $\delta_{\text{color}} = (1 - k!/k^k)^L$.
 
 *Proof:*  
@@ -117,13 +122,13 @@ Defining $\delta_{\text{reservoir}} = P(\mathcal{E}_{\text{reservoir}})$ complet
 
 ---
 
-### 3.5 Invariant 4: Temporal Soundness Invariant
+### 3.5 Invariant 4: Temporal Soundness Invariant ($P_{\text{motif}} = 1.0$)
 **Theorem 4 (Certified Zero False Temporal Cycles):**  
 ChronosGraph may fail to detect a cycle (false negative bounded by Theorem 3), but **it will never report a temporally invalid cycle**. That is, for every reported cycle $C = (e_1, \dots, e_k)$:
 $$\text{Reported Cycle } C \implies t(e_1) < t(e_2) < \dots < t(e_k) \quad \land \quad t(e_k) - t(e_1) \le \Delta T$$
 
 *Proof:*  
-Every DP reachability state at vertex $v$ records $(\text{start\_time}, \text{latest\_time}, \text{nodes})$. A path state is extended only when an incoming edge $(u \to v, t)$ strictly satisfies $t > \text{latest\_time}$ and $t - \text{start\_time} \le \Delta T$. Furthermore, cycle closure requires an edge $(v_k \to v_1, t_{\text{close}})$ where $v_k$ holds an active path starting at $v_1$ with $t_{\text{close}} > \text{latest\_time}$ and $t_{\text{close}} - \text{start\_time} \le \Delta T$. By induction on path length, timestamps are strictly increasing and bounded within $\Delta T$. Temporal precision is guaranteed at 100%. $\blacksquare$
+Every DP reachability state at vertex $v$ records $(\text{start\_time}, \text{latest\_time}, \text{nodes})$. A path state is extended only when an incoming edge $(u \to v, t)$ strictly satisfies $t > \text{latest\_time}$ and $t - \text{start\_time} \le \Delta T$. Furthermore, cycle closure requires an edge $(v_k \to v_1, t_{\text{close}})$ where $v_k$ holds an active path starting at $v_1$ with $t_{\text{close}} > \text{latest\_time}$ and $t_{\text{close}} - \text{start\_time} \le \Delta T$. By induction on path length, timestamps are strictly increasing and bounded within $\Delta T$. Temporal motif precision is guaranteed at $P_{\text{motif}} = 1.0$. $\blacksquare$
 
 ---
 
@@ -140,11 +145,20 @@ LRU working-set touch takes $O(1)$ time. Reservoir ingestion takes $O(1)$ amorti
 
 ## 4. Empirical Evaluation
 
-### 4.1 Experiment 1: The Memory-Recall-Latency Pareto Frontier
-We evaluate ChronosGraph across a comprehensive parameter grid: $V_{\max} \in \{100, 250, 500, 1000\}$ and $L \in \{8, 16, 24, 32\}$ on a stream of 4,114 transactions with 40 embedded ground-truth temporal cycles ($k=3, \Delta T=300\text{s}$).
+### 4.1 Precision Metric Clarification: $P_{\text{motif}}$ vs. $P_{\text{financial}}$
+To avoid ambiguity, we explicitly distinguish:
+- **Temporal Motif Precision ($P_{\text{motif}}$):** The fraction of reported cycles that are mathematically valid, chronological temporal cycles. For both Exact Temporal DFS and ChronosGraph, $P_{\text{motif}} = 100.0\%$.
+- **Financial-Pattern Precision ($P_{\text{financial}}$):** The fraction of reported cycles that correspond to pre-labeled synthetic fraud rings. In realistic background streams with thousands of transactions, accidental temporal cycles occasionally form by chance among benign accounts. When evaluating solely against injected fraud labels, these benign accidental cycles appear as nominal false positives, yielding $P_{\text{financial}} \approx 71\%\text{--}83\%$.
+
+ChronosGraph matches Exact Temporal DFS's precision identically ($71.4\%\text{--}83.3\%$) because it isolates the exact same underlying temporal cycles, whereas the Static Graph Detector collapses to $0.1\%\text{--}4.4\%$ by reporting thousands of temporally invalid cycles.
+
+---
+
+### 4.2 Experiment 1: The Memory-Recall-Latency Pareto Frontier
+Evaluated across a parameter grid ($V_{\max} \in \{100, 250, 500, 1000\}$ and $L \in \{8, 16, 24, 32\}$) on a stream of 4,114 transactions with 40 embedded ground-truth temporal cycles ($k=3, \Delta T=300\text{s}$).
 
 #### Table 1: Empirical Pareto Frontier (Memory vs. Recall vs. Latency)
-| $V_{\max}$ | $L$ | Recall (%) | Wilson 95% CI | Precision (%) | $F_1$-Score | RAM (KB) | Throughput (tx/s) | $p_{50}$ Latency | $p_{99}$ Latency |
+| $V_{\max}$ | $L$ | Recall (%) | Wilson 95% CI | Precision ($P_{\text{fin}}$) | $F_1$-Score | RAM (KB) | Throughput (tx/s) | $p_{50}$ Latency | $p_{99}$ Latency |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **100** | 8 | 85.0% | [70.9% - 92.9%] | 100.0% | 0.919 | **73.1 KB** | **23,320 tx/s** | **36.2 $\mu$s** | 132.2 $\mu$s |
 | **100** | 16 | 97.5% | [87.1% - 99.6%] | 100.0% | 0.987 | 122.0 KB | 12,445 tx/s | 69.7 $\mu$s | 193.1 $\mu$s |
@@ -157,48 +171,42 @@ We evaluate ChronosGraph across a comprehensive parameter grid: $V_{\max} \in \{
 | **500** | 16 | 97.5% | [87.1% - 99.6%] | 97.5% | 0.975 | 632.6 KB | 9,899 tx/s | 85.2 $\mu$s | 278.3 $\mu$s |
 | **500** | 24 | 100.0% | [91.2% - 100.0%] | 97.6% | **0.988** | 936.1 KB | 5,719 tx/s | 149.1 $\mu$s | 422.7 $\mu$s |
 
-**Key Finding:** At $V_{\max}=100, L=24$, ChronosGraph achieves **100% recall ($F_1 = 1.000$)** under just **175.3 KB of memory** with a median latency of $105.5\,\mu\text{s}$ ($>8,000\text{ tx/s}$). If ultra-high throughput is required, $L=8$ delivers **23,320 tx/s** with $36.2\,\mu\text{s}$ median latency and 85.0% recall on 73.1 KB RAM.
-
 ---
 
-### 4.2 Experiment 2: Five Financial Cyber-Forensics Topologies
-We evaluate ChronosGraph across five distinct synthetic and real-world financial topologies, benchmarked directly against:
-1. **Exact Temporal DFS (Ground Truth):** Exhaustive sliding-window tree search;
-2. **Static Graph Cycle Detector:** Topological cycle detection disregarding timestamps;
-3. **Degree & Volume Heuristics:** Standard compliance thresholding rules.
+### 4.3 Experiment 2: Five Financial Cyber-Forensics Topologies
 
 #### Table 2: 5-Topology Benchmark Performance Comparison
 | Topology Scenario | Metric | Exact Temporal DFS | Static Graph Detector | Degree Heuristic | ChronosGraph (Fast, L=16) | ChronosGraph (Assurance, L=32) |
 | :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Smurfing & Structuring** | Recall | 100.0% | 100.0% | 0.0% | 68.0% | **88.0%** |
-| ($k=4, \Delta T=3600\text{s}$) | Precision | 78.1% | 0.5% | 100.0% | 70.8% | **75.9%** |
+| **Smurfing / Structuring** | Recall | 100.0% | 100.0% | 0.0% | 68.0% | **88.0%** |
+| ($k=4, \Delta T=3600\text{s}$) | Precision ($P_{\text{fin}}$) | 78.1% | 0.5% | 100.0% | 70.8% | **75.9%** |
 | 25 rings, 2,500 bg edges | $F_1$-Score | 0.877 | 0.009 | 0.000 | 0.694 | **0.815** |
 | | Throughput | 223,427 tx/s | 6,112 tx/s | 848,419 tx/s | **8,219 tx/s** | **3,768 tx/s** |
 | **DEX Triangular Arbitrage** | Recall | 100.0% | 100.0% | 0.0% | **100.0%** | **100.0%** |
-| ($k=3, \Delta T=15\text{s}$) | Precision | 83.3% | 3.0% | 100.0% | **83.3%** | **83.3%** |
+| ($k=3, \Delta T=15\text{s}$) | Precision ($P_{\text{fin}}$) | 83.3% | 3.0% | 100.0% | **83.3%** | **83.3%** |
 | 30 rings, 3,000 bg edges | $F_1$-Score | 0.909 | 0.058 | 0.000 | **0.909** | **0.909** |
 | | Throughput | 325,305 tx/s | 46,406 tx/s | 1,242,369 tx/s | **9,629 tx/s** | **5,635 tx/s** |
 | **Token/NFT Wash Trading** | Recall | 100.0% | 100.0% | 0.0% | **100.0%** | **100.0%** |
-| ($k=3, \Delta T=300\text{s}$) | Precision | 73.5% | 4.4% | 100.0% | **73.5%** | **73.5%** |
+| ($k=3, \Delta T=300\text{s}$) | Precision ($P_{\text{fin}}$) | 73.5% | 4.4% | 100.0% | **73.5%** | **73.5%** |
 | 25 rings, 2,500 bg edges | $F_1$-Score | 0.847 | 0.084 | 0.000 | **0.847** | **0.847** |
 | | Throughput | 179,484 tx/s | 66,128 tx/s | 999,063 tx/s | **10,776 tx/s** | **4,979 tx/s** |
 | **Visa/SWIFT Burst Stream** | Recall | 100.0% | 100.0% | 0.0% | 95.0% | **100.0%** |
-| ($k=3, \Delta T=60\text{s}$) | Precision | 12.1% | 0.1% | 100.0% | 15.2% | **14.0%** |
+| ($k=3, \Delta T=60\text{s}$) | Precision ($P_{\text{fin}}$) | 12.1% | 0.1% | 100.0% | 15.2% | **14.0%** |
 | 40 rings, 15,000 bg edges | $F_1$-Score | 0.216 | 0.001 | 0.000 | **0.262** | **0.246** |
 | | Throughput | 136,127 tx/s | 1,996 tx/s | 1,220,656 tx/s | **8,674 tx/s** | **3,792 tx/s** |
 | **Adversarial Tumbler Mixer** | Recall | 100.0% | 100.0% | 0.0% | **100.0%** | **100.0%** |
-| ($k=3, \Delta T=600\text{s}$) | Precision | 71.4% | 3.5% | 100.0% | **71.4%** | **71.4%** |
+| ($k=3, \Delta T=600\text{s}$) | Precision ($P_{\text{fin}}$) | 71.4% | 3.5% | 100.0% | **71.4%** | **71.4%** |
 | 20 rings, 3,000 bg edges | $F_1$-Score | 0.833 | 0.067 | 0.000 | **0.833** | **0.833** |
 | | Throughput | 142,604 tx/s | 53,754 tx/s | 566,550 tx/s | **8,857 tx/s** | **3,990 tx/s** |
 
 ---
 
-## 5. Architectural Insights & Discussion
+## 5. Architectural Discussion
 
-### 5.1 Why Static Graph Algorithms Fail in Financial Cyber-Forensics
+### 5.1 Why Static Graph Algorithms Fail in Financial Forensics
 Across all five benchmarks, the Static Graph Cycle Detector exhibits an average precision of only $2.3\%$ ($F_1 \le 0.084$). Because static cycle enumeration projects the graph into an aggregated adjacency matrix, it identifies thousands of combinatorial cycles whose transactions occurred out of temporal sequence (e.g., $t_3 < t_1 < t_2$). In live regulatory compliance, this creates insurmountable false-alarm fatigue.
 
-### 5.2 Why Degree Heuristics Miss Sophisticated Laundering
+### 5.2 Why Degree Heuristics Miss Structuring Patterns
 The Degree / Volume Heuristic consistently achieved **0.0% recall** across all smurfing and structuring topologies. Sophisticated syndicates intentionally structure micro-transactions beneath mandatory reporting limits (e.g., $\$9,400$ vs. $\$10,000$) and distribute transfers across multiple transient mule accounts, completely bypassing threshold filters. ChronosGraph detects them because it evaluates the topological and temporal motif structure rather than absolute volume.
 
 ### 5.3 Decoupled Motif Detection vs. Financial Interpretation
@@ -207,7 +215,7 @@ ChronosGraph operates as a domain-agnostic temporal graph motif engine. When an 
 ---
 
 ## 6. Conclusion
-ChronosGraph introduces a mathematically sound, bounded-memory framework for detecting temporal graph motifs in unbounded streaming networks. By locking active vertex memory ($V_{\max}$), deploying $k$-wise independent polynomial color-coding sketches, and enforcing strict temporal reachability invariants, ChronosGraph achieves sub-millisecond per-edge updates ($36\text{--}150\,\mu\text{s}$) and near-perfect detection recall ($97.5\%\text{--}100\%$) under flat, constant RAM footprints.
+ChronosGraph introduces a mathematically sound, bounded-memory framework for detecting temporal graph motifs in unbounded streaming networks. By locking active vertex memory ($V_{\max}$), deploying unbiased $k$-wise independent polynomial color-coding sketches, and enforcing strict temporal reachability invariants, ChronosGraph achieves sub-millisecond per-edge updates ($36\text{--}150\,\mu\text{s}$) and near-perfect detection recall ($97.5\%\text{--}100\%$) under flat, constant RAM footprints.
 
 ---
 

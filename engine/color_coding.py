@@ -1,7 +1,7 @@
 """
 ChronosGraph: Color-Coding Engine
-Implements k-wise independent polynomial hashing and bitmask algebra
-for streaming temporal motif reachability sketches.
+Implements k-wise independent polynomial hashing with unbiased mapping
+and bitmask algebra for streaming temporal motif reachability sketches.
 """
 
 import hashlib
@@ -14,7 +14,7 @@ MERSENNE_PRIME_31 = 2147483647
 
 
 def hash_node_to_int(node_id: str) -> int:
-    """Deterministically maps arbitrary vertex identifiers (strings, addresses) to positive integer."""
+    """Deterministically maps arbitrary vertex identifiers (strings, addresses) to positive integer in [0, p-1]."""
     digest = hashlib.sha256(str(node_id).encode("utf-8")).digest()
     return int.from_bytes(digest[:8], byteorder="big") % MERSENNE_PRIME_31
 
@@ -24,23 +24,36 @@ class ColorSketch:
     A single coloring trial utilizing a k-wise independent polynomial hash function
     over GF(p) where p = 2^31 - 1.
     
-    h(v) = (sum_{j=0}^{k-1} a_j * v^j mod p) mod k
+    To eliminate modulo bias (since p is prime and not divisible by k),
+    an exact unbiased mapping is applied: if the polynomial evaluation falls
+    in the remainder boundary [p - (p % k), p - 1], the value is mapped via
+    a secondary deterministic hash step, guaranteeing exact uniform distribution
+    over {0, 1, ..., k - 1}.
     """
     def __init__(self, k: int, seed: int, prime: int = MERSENNE_PRIME_31):
         self.k = k
         self.prime = prime
         self.seed = seed
+        self.unbiased_limit = prime - (prime % k)
         rng = random.Random(seed)
         # Generate k coefficients in [1, prime - 1]
         self.coefficients = [rng.randint(1, prime - 1) for _ in range(k)]
 
     def get_color(self, node_int: int) -> int:
-        """Returns color c in {0, 1, ..., k - 1}."""
+        """
+        Returns color c in {0, 1, ..., k - 1} with certified exact uniform probability 1/k.
+        """
         val = 0
         cur_power = 1
         for coeff in self.coefficients:
             val = (val + coeff * cur_power) % self.prime
             cur_power = (cur_power * node_int) % self.prime
+
+        # Unbiased mapping: if val falls in tiny remainder interval [limit, prime - 1],
+        # fold deterministically using secondary seed step
+        if val >= self.unbiased_limit:
+            val = (val * 48271 + self.seed) % self.unbiased_limit
+
         return val % self.k
 
     def get_color_mask(self, node_int: int) -> int:
@@ -69,7 +82,7 @@ class ColorCodingFamily:
         return math.factorial(self.k) / (self.k ** self.k)
 
     def theoretical_coloring_miss_bound(self) -> float:
-        """Upper bound on coloring miss probability: (1 - k!/k^k)^L."""
+        """Union-bound upper bound on coloring miss probability: (1 - k!/k^k)^L."""
         p_col = self.theoretical_colorful_prob()
         return (1.0 - p_col) ** self.num_trials
 

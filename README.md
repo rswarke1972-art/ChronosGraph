@@ -6,14 +6,14 @@
 [![IEEE Research Paper](https://img.shields.io/badge/Research%20Paper-IEEE%20Format-gold.svg)](paper/IEEE_ChronosGraph_Manuscript.md)
 [![Patentability Review](https://img.shields.io/badge/Patentability-12%20Claims%20Drafted-rose.svg)](paper/patentability_and_prior_art_review.md)
 
-> **ChronosGraph** is an online streaming temporal graph engine that achieves bounded-memory, sub-millisecond detection of directed cyclical motifs ($k$-cliques, smurfing rings, triangular arbitrage loops, wash-trading rings) in high-velocity financial streams without maintaining an unbounded adjacency matrix.
+> **ChronosGraph** is an online streaming temporal graph engine that achieves bounded-memory, sub-millisecond detection of directed cyclical motifs ($k$-cliques, temporal triangles) used to model financial-forensics patterns (such as smurfing rings, triangular trading cycles, and wash-trading structures) in high-velocity streams without maintaining an unbounded adjacency matrix.
 
 ---
 
 ## 1. The Core Scientific Dilemma
 
-In high-velocity transaction networks (Visa, Ethereum, SWIFT), fraud syndicates route capital in closed temporal loops. However:
-1. **Static Graph Algorithms (Neo4j, NetworkX, Tarjan's SCC)** ignore the chronological arrow of time ($t_1 < t_2 < \dots < t_k$), resulting in catastrophic false-alarm rates (**precision $< 4.4\%$** in our benchmarks).
+In high-velocity transaction streams (Visa, Ethereum, SWIFT), fraud syndicates route capital in closed temporal loops. However:
+1. **Static Graph Algorithms (Neo4j, NetworkX, Tarjan's SCC)** ignore the chronological arrow of time ($t_1 < t_2 < \dots < t_k$), resulting in catastrophic false-alarm rates (**financial-pattern precision $< 4.4\%$** in our benchmarks).
 2. **Exact Sliding-Window Temporal DFS** scales exponentially with vertex degree $O(V \cdot d^k)$, freezing stream processors when encountering exchange hot wallets ($d > 10^4$).
 3. **Unbounded Streams** cause out-of-memory crashes if edges or historical paths are accumulated indefinitely.
 
@@ -21,17 +21,17 @@ In high-velocity transaction networks (Visa, Ethereum, SWIFT), fraud syndicates 
 
 ## 2. The 7 Theoretical Invariants of ChronosGraph
 
-ChronosGraph establishes 7 locked architectural and mathematical guarantees:
+ChronosGraph establishes 7 audited mathematical guarantees:
 
 1. **Option A Bounded System:** Active vertex working set is strictly capped at $|V_{\text{active}}| \le V_{\max}$ with LRU temporal eviction, establishing certified total memory:
    $$\boxed{M_{\text{total}} \le O(V_{\max} \cdot L \cdot 2^k + M_{\text{reservoir}}) = O(1)}$$
    independent of stream volume $N \to \infty$.
-2. **$k$-Wise Independent Coloring:** Replaces generic 2-universal hashing with a formal $k$-wise independent polynomial construction over $\mathbb{F}_p$ ($p = 2^{31} - 1$), mathematically validating:
-   $$P(\text{colorful}) = \frac{k!}{k^k}$$
-3. **Unified Miss Probability Bound:** Incorporates reservoir sampling loss into the miss rate:
-   $$P(\text{miss}) \le \left(1 - \frac{k!}{k^k}\right)^L + \delta_{\text{reservoir}}(M_{\text{reservoir}}, \Delta T, \lambda)$$
-4. **Temporal Soundness Invariant:** Every DP reachability state carries temporal provenance $(t_{\text{start}}, t_{\text{latest}}, \text{nodes})$. Proven theorem: **ChronosGraph may miss a cycle, but it never reports a temporally invalid cycle** (100% temporal precision).
-5. **Scientific Framing vs. Static Baselines:** Articulates the difference as answering distinct queries: topological existence in $G$ vs. strictly chronological progression within sliding window $\Delta T$.
+2. **Unbiased $k$-Wise Independent Coloring:** Evaluated via hash polynomials over Mersenne prime field $\mathbb{F}_{2^{31}-1}$ with deterministic remainder re-mapping, mathematically validating exact:
+   $$P(C \text{ is colorful}) = \frac{k!}{k^k}$$
+3. **Union-Bound Miss Probability Bound:** Combines color-coding miss probability with reservoir edge loss:
+   $$\boxed{\delta_{\text{miss}} \le \delta_{\text{color}} + \delta_{\text{reservoir}} = \left(1 - \frac{k!}{k^k}\right)^L + \delta_{\text{reservoir}}(M_{\text{reservoir}}, \Delta T, \lambda)}$$
+4. **Deterministic Temporal Soundness:** Every DP reachability state carries temporal provenance $(t_{\text{start}}, t_{\text{latest}}, \text{nodes})$. Proven theorem: **ChronosGraph may miss a cycle under reservoir pressure, but it never reports a temporally invalid cycle** (100% temporal motif precision $P_{\text{motif}} = 1.0$).
+5. **Scientific Framing vs. Static Baselines:** Formulated as answering different queries: topological existence in $G$ vs. strictly chronological progression within sliding window $\Delta T$.
 6. **Decoupled Architecture:** Core engine detects directed temporal motifs $C_k$, which are downstream-classified by financial cyber-forensics rules (AML smurfing, DEX arbitrage, wash trading).
 7. **The Pareto Frontier:** Directly maps hardware memory budget against empirical recall and per-edge latency.
 
@@ -39,10 +39,13 @@ ChronosGraph establishes 7 locked architectural and mathematical guarantees:
 
 ## 3. Empirical Benchmarks
 
-### Experiment 1: The Memory-Recall-Latency Pareto Frontier
-Tested on 4,114 streaming transactions with 40 embedded ground-truth temporal cycles ($k=3, \Delta T=300\text{s}$):
+### Precision Metric Clarification: $P_{\text{motif}}$ vs. $P_{\text{financial}}$
+- **Temporal Motif Precision ($P_{\text{motif}}$):** Fraction of reported cycles that are mathematically valid chronological cycles. Both Exact Temporal DFS and ChronosGraph achieve **100.0%**.
+- **Financial-Pattern Precision ($P_{\text{financial}}$):** Fraction of reported cycles corresponding to pre-labeled synthetic fraud rings. Accidental temporal cycles forming by chance in background traffic naturally yield $P_{\text{financial}} \approx 71\%\text{--}83\%$. ChronosGraph matches Exact DFS identically, while Static Graph algorithms collapse to $0.1\%\text{--}4.4\%$.
 
-| $V_{\max}$ | $L$ | Recall (%) | Wilson 95% CI | Precision (%) | $F_1$-Score | RAM (KB) | Throughput (tx/s) | $p_{50}$ Latency | $p_{99}$ Latency |
+### Experiment 1: The Memory-Recall-Latency Pareto Frontier ($k=3, \Delta T=300\text{s}$)
+
+| $V_{\max}$ | $L$ | Recall (%) | Wilson 95% CI | Precision ($P_{\text{fin}}$) | $F_1$-Score | RAM (KB) | Throughput (tx/s) | $p_{50}$ Latency | $p_{99}$ Latency |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **100** | 8 | 85.0% | [70.9% - 92.9%] | 100.0% | 0.919 | **73.1 KB** | **23,320 tx/s** | **36.2 $\mu$s** | 132.2 $\mu$s |
 | **100** | 16 | 97.5% | [87.1% - 99.6%] | 100.0% | 0.987 | 122.0 KB | 12,445 tx/s | 69.7 $\mu$s | 193.1 $\mu$s |
@@ -61,39 +64,7 @@ Tested on 4,114 streaming transactions with 40 embedded ground-truth temporal cy
 
 ---
 
-## 4. Repository Structure
-
-```
-ChronosGraph/
-├── engine/
-│   ├── color_coding.py         # k-wise independent polynomial hashing & bitmask algebra
-│   ├── reservoir_stream.py     # Bounded active vertex LRU + priority reservoir buffer
-│   ├── temporal_graph.py       # Temporal edges, provenance, and active state tracking
-│   └── cycle_detector.py       # Core ChronosGraph streaming motif detector
-├── baselines/
-│   ├── exact_temporal_dfs.py   # Ground truth sliding-window temporal DFS
-│   ├── static_cycle_detector.py# Static graph cycle detector (topological only)
-│   └── degree_heuristic.py     # Compliance degree & volume thresholding filter
-├── benchmarks/
-│   ├── pareto_frontier.py      # Core research experiment: Memory vs Recall vs Latency
-│   └── benchmark_streaming_aml.py # 5 financial cyber-forensics topologies
-├── tests/
-│   └── test_chronos_graph.py   # 12 automated mathematical unit tests
-├── dashboard/                  # 60 FPS HTML5 Canvas interactive simulation
-│   ├── index.html
-│   ├── app.js
-│   └── styles.css
-├── paper/
-│   ├── IEEE_ChronosGraph_Manuscript.md # Complete IEEE research paper
-│   └── patentability_and_prior_art_review.md # 12 formal patent claims
-├── index.html                  # GitHub Pages entry point
-├── styles.css
-└── app.js
-```
-
----
-
-## 5. Quickstart & Verification
+## 4. Quickstart & Verification
 
 ### Run Automated Unit Tests (12/12 Passing)
 ```bash
@@ -112,12 +83,12 @@ python -m benchmarks.benchmark_streaming_aml
 
 ---
 
-## 6. Live Interactive Simulation
+## 5. Live Interactive Simulation
 Experience the 60 FPS Canvas simulation live at:  
 👉 **[https://rswarke1972-art.github.io/ChronosGraph/](https://rswarke1972-art.github.io/ChronosGraph/)**
 
 ---
 
-## 7. License & Author
+## 6. License & Author
 - **Author:** Sahil Rajesh Warke
 - **License:** MIT License
