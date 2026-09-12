@@ -1,6 +1,6 @@
 """
 ChronosGraph: Color-Coding Engine
-Implements k-wise independent polynomial hashing with unbiased mapping
+Implements k-wise independent polynomial hashing with certified rejection sampling
 and bitmask algebra for streaming temporal motif reachability sketches.
 """
 
@@ -22,13 +22,13 @@ def hash_node_to_int(node_id: str) -> int:
 class ColorSketch:
     """
     A single coloring trial utilizing a k-wise independent polynomial hash function
-    over GF(p) where p = 2^31 - 1.
+    over GF(p) where p = 2^31 - 1 with true rejection sampling.
     
-    To eliminate modulo bias (since p is prime and not divisible by k),
-    an exact unbiased mapping is applied: if the polynomial evaluation falls
-    in the remainder boundary [p - (p % k), p - 1], the value is mapped via
-    a secondary deterministic hash step, guaranteeing exact uniform distribution
-    over {0, 1, ..., k - 1}.
+    Because p is prime and not divisible by k (e.g., p % 3 = 1, p % 4 = 3),
+    evaluations falling in the boundary interval [p - (p % k), p - 1] are rejected
+    and resampled. The accepted domain [0, p - (p % k) - 1] has cardinality exactly
+    divisible by k, guaranteeing exactly (p - (p % k)) / k pre-images per color
+    and certified exact uniform probability P(c) = 1/k.
     """
     def __init__(self, k: int, seed: int, prime: int = MERSENNE_PRIME_31):
         self.k = k
@@ -41,20 +41,27 @@ class ColorSketch:
 
     def get_color(self, node_int: int) -> int:
         """
-        Returns color c in {0, 1, ..., k - 1} with certified exact uniform probability 1/k.
+        Returns color c in {0, 1, ..., k - 1} with certified exact uniform probability 1/k
+        via true rejection sampling on the boundary [p - (p % k), p - 1].
         """
-        val = 0
-        cur_power = 1
-        for coeff in self.coefficients:
-            val = (val + coeff * cur_power) % self.prime
-            cur_power = (cur_power * node_int) % self.prime
+        salt = 0
+        while True:
+            val = 0
+            cur_power = 1
+            x = (node_int + salt * 48271) % self.prime
+            for coeff in self.coefficients:
+                val = (val + coeff * cur_power) % self.prime
+                cur_power = (cur_power * x) % self.prime
 
-        # Unbiased mapping: if val falls in tiny remainder interval [limit, prime - 1],
-        # fold deterministically using secondary seed step
-        if val >= self.unbiased_limit:
-            val = (val * 48271 + self.seed) % self.unbiased_limit
+            # True rejection sampling:
+            # Only accept if val < unbiased_limit.
+            # Card([0, unbiased_limit - 1]) == unbiased_limit, which is an exact multiple of k.
+            if val < self.unbiased_limit:
+                return val % self.k
 
-        return val % self.k
+            # Rejection probability is (prime % k) / prime <= 3 / 2147483647 ~= 1.4e-9.
+            # Upon rejection, re-evaluate with deterministic salt increment.
+            salt += 1
 
     def get_color_mask(self, node_int: int) -> int:
         """Returns 1-hot bitmask (1 << color)."""

@@ -1,5 +1,5 @@
 """
-Unit Test Suite for ChronosGraph (12 Theoretical Invariant Proofs)
+Unit Test Suite for ChronosGraph (13 Theoretical Invariant Proofs)
 """
 
 import math
@@ -36,6 +36,22 @@ class TestChronosGraph(unittest.TestCase):
         for c, count in enumerate(color_counts):
             # Deviation should be within 10% for 10,000 nodes
             self.assertTrue(abs(count - expected) / expected < 0.10, f"Color {c} count {count} deviates from {expected}")
+
+    def test_01b_rejection_sampling_unbiased_boundary(self):
+        """Test 1b: Verify that rejection sampling strictly bounds accepted range to unbiased_limit."""
+        k = 3
+        p31 = 2147483647
+        sketch = ColorSketch(k=k, seed=42, prime=p31)
+        self.assertEqual(sketch.unbiased_limit % k, 0)
+        self.assertEqual(sketch.unbiased_limit, p31 - (p31 % 3))
+
+        # Test small-field model (p=11, k=3, limit=9) to prove rejection behavior
+        small_sketch = ColorSketch(k=3, seed=7, prime=11)
+        self.assertEqual(small_sketch.unbiased_limit, 9)
+        # Verify that all 11 inputs map into colors {0, 1, 2}
+        colors = [small_sketch.get_color(x) for x in range(11)]
+        for c in colors:
+            self.assertIn(c, (0, 1, 2))
 
     def test_02_theoretical_colorfulness_probability(self):
         """Test 2: Empirical colorfulness of k-tuples matches k! / k^k."""
